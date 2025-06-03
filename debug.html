@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #1a1a2e;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>Debug Test - Static HTML Works!</h1>
+    <p>If you can see this, the issue is with React/TypeScript, not basic HTML serving.</p>
+    <div id="debug-info"></div>
+    
+    <script>
+        console.log('Debug: JavaScript is running');
+        document.getElementById('debug-info').innerHTML = `
+            <h3>Debug Information:</h3>
+            <ul>
+                <li>Current URL: ${window.location.href}</li>
+                <li>User Agent: ${navigator.userAgent}</li>
+                <li>Timestamp: ${new Date().toISOString()}</li>
+            </ul>
+        `;
+        
+        // Check if the main app is failing
+        fetch('/src/main.tsx')
+            .then(response => response.text())
+            .then(data => {
+                console.log('Main.tsx content loaded successfully');
+            })
+            .catch(error => {
+                console.error('Failed to load main.tsx:', error);
+            });
+    </script>
+</body>
+</html>
