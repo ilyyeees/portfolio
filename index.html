@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ilyes Abbas | The Portfolio</title>
+
+    <!-- TAILWIND -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- LIBRARIES -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <!-- PREMIUM FONTS -->
+    <link
+      href="https://api.fontshare.com/v2/css?f[]=clash-display@200,400,500,600,700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              dark: '#030303',
+              glass: 'rgba(255, 255, 255, 0.03)',
+              glassBorder: 'rgba(255, 255, 255, 0.08)',
+              accent: '#3B82F6', // Blue
+              accent2: '#A855F7', // Purple
+            },
+            fontFamily: {
+              display: ['Clash Display', 'sans-serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        background-color: #030303;
+        color: #fff;
+        overflow-x: hidden;
+        cursor: none; /* Custom cursor */
+      }
+
+      /* SMOOTH SCROLL */
+      html.lenis {
+        width: auto;
+      }
+      .lenis.lenis-smooth {
+        scroll-behavior: auto;
+      }
+
+      /* SHADER BACKGROUND */
+      #canvas-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        opacity: 0.6;
+      }
+
+      /* BENTO GRID CARDS */
+      .bento-card {
+        background: var(--glass);
+        border: 1px solid var(--glassBorder);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 24px;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+          border-color 0.3s ease;
+        overflow: hidden;
+        position: relative;
+      }
+      .bento-card:hover {
+        border-color: rgba(255, 255, 255, 0.2);
+        transform: translateY(-5px);
+      }
+
+      /* SHINE EFFECT ON HOVER */
+      .bento-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(
+          to right,
+          transparent,
+          rgba(255, 255, 255, 0.05),
+          transparent
+        );
+        transform: skewX(-25deg);
+        transition: 0.5s;
+      }
+      .bento-card:hover::after {
+        left: 150%;
+        transition: 0.7s;
+      }
+
+      /* CUSTOM CURSOR */
+      #cursor {
+        position: fixed;
+        width: 20px;
+        height: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        transition: width 0.3s, height 0.3s, background-color 0.3s;
+        mix-blend-mode: difference;
+      }
+      #cursor.hovered {
+        width: 60px;
+        height: 60px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: transparent;
+        backdrop-filter: blur(2px);
+      }
+
+      /* GLOW TEXT */
+      .glow-text {
+        text-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
+      }
+
+      /* GRAIN OVERLAY */
+      .grain {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+        pointer-events: none;
+        z-index: 9000;
+      }
+
+      /* MARQUEE ANIMATION */
+      .marquee-container {
+        overflow: hidden;
+        white-space: nowrap;
+      }
+      .marquee-content {
+        display: inline-block;
+        animation: marquee 20s linear infinite;
+      }
+      @keyframes marquee {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-50%);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- GRAIN & CURSOR -->
+    <div class="grain"></div>
+    <div id="cursor"></div>
+
+    <!-- BACKGROUND SHADER -->
+    <div id="canvas-container"></div>
+
+    <!-- NAV -->
+    <nav
+      class="fixed top-0 w-full p-6 md:p-10 z-50 flex justify-between items-center mix-blend-difference"
+    >
+      <a
+        href="#"
+        class="text-2xl font-display font-bold hover-trigger tracking-tight"
+        >IA<span class="text-accent">.</span></a
+      >
+      <div
+        class="hidden md:flex gap-10 font-mono text-xs uppercase tracking-widest text-gray-400"
+      >
+        <a
+          href="#about"
+          class="hover:text-white hover-trigger transition-colors"
+          >01_Profile</a
+        >
+        <a
+          href="#stats"
+          class="hover:text-white hover-trigger transition-colors"
+          >02_Stats</a
+        >
+        <a
+          href="#stack"
+          class="hover:text-white hover-trigger transition-colors"
+          >03_Arsenal</a
+        >
+        <a
+          href="#contact"
+          class="hover:text-white hover-trigger transition-colors"
+          >04_Connect</a
+        >
+      </div>
+      <a
+        href="mailto:ilyes.abbas@ensia.edu.dz"
+        class="px-6 py-2 border border-white/20 rounded-full font-mono text-xs hover:bg-white hover:text-black transition-all hover-trigger"
+      >
+        HIRE_ME()
+      </a>
+    </nav>
+
+    <!-- MAIN SCROLL CONTAINER -->
+    <main class="w-full relative">
+      <!-- HERO SECTION -->
+      <section
+        class="min-h-screen flex flex-col justify-center px-6 md:px-20 relative pt-20"
+      >
+        <!-- Floating Badges -->
+        <div class="flex flex-wrap gap-3 mb-6 opacity-0 animate-in">
+          <div
+            class="px-3 py-1 rounded-full border border-accent/30 bg-accent/10 text-accent font-mono text-[10px] tracking-wider"
+          >
+            AI ENGINEERING STUDENT
+          </div>
+          <div
+            class="px-3 py-1 rounded-full border border-accent2/30 bg-accent2/10 text-accent2 font-mono text-[10px] tracking-wider"
+          >
+            ENSIA ALGIERS
+          </div>
+        </div>
+
+        <h1
+          class="font-display text-[13vw] leading-[0.8] font-semibold tracking-tighter mb-4 glow-text opacity-0 animate-in"
+        >
+          ILYES<br />ABBAS
+        </h1>
+
+        <div
+          class="flex flex-col md:flex-row md:items-end justify-between gap-10 mt-10 opacity-0 animate-in"
+        >
+          <div class="max-w-xl">
+            <p
+              class="text-xl md:text-2xl text-gray-300 font-light leading-relaxed"
+            >
+              A first-principles thinker engineering the gap between
+              <span class="text-white font-medium">Mathematical Logic</span> and
+              <span class="text-white font-medium">Software Aesthetics</span>.
+            </p>
+          </div>
+          <div class="font-mono text-xs text-gray-500 text-right">
+            SCROLL VELOCITY: NORMAL<br />
+            SYSTEM: ONLINE
+          </div>
+        </div>
+      </section>
+
+      <!-- BENTO GRID: ABOUT & STATS -->
+      <section id="about" class="px-4 md:px-20 py-20">
+        <div
+          class="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6 auto-rows-[minmax(200px,auto)]"
+        >
+          <!-- 1. BIOGRAPHY (Large) -->
+          <div
+            class="col-span-1 md:col-span-8 row-span-2 bento-card p-8 md:p-12 flex flex-col justify-between"
+          >
+            <div>
+              <h3 class="font-mono text-accent text-xs mb-4">
+                01 // NARRATIVE
+              </h3>
+              <h2 class="font-display text-3xl md:text-4xl mb-6">
+                Understanding the "Why" behind the Machine.
+              </h2>
+              <p class="text-gray-400 leading-relaxed mb-4">
+                I don't just write code; I deconstruct complexity. Currently a
+                2nd Year student at the
+                <strong
+                  >National School of Artificial Intelligence (ENSIA)</strong
+                >, my philosophy is rooted in deep comprehension.
+              </p>
+              <p class="text-gray-400 leading-relaxed">
+                While my primary focus is
+                <strong>Machine Learning & Data Science</strong>, I operate as a
+                hybrid engineer. I combine the raw performance of
+                <strong>C++</strong> with the flexibility of
+                <strong>Python</strong> and the structural beauty of clean
+                <strong>UI/UX</strong>.
+              </p>
+            </div>
+            <div
+              class="mt-8 pt-8 border-t border-white/10 flex gap-6 font-mono text-xs text-gray-500"
+            >
+              <span>LOC: ALGIERS, DZ</span>
+              <span>ROLE: STUDENT & DEV</span>
+            </div>
+          </div>
+
+          <!-- 2. THE SCORE (The 17.96) -->
+          <div
+            class="col-span-1 md:col-span-4 row-span-1 bento-card p-8 relative overflow-hidden group"
+          >
+            <div
+              class="absolute inset-0 bg-gradient-to-br from-accent2/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            ></div>
+            <h3 class="font-mono text-gray-400 text-xs mb-2">
+              ACADEMIC RECORD (BAC)
+            </h3>
+            <div class="flex items-end gap-2">
+              <span
+                class="font-display text-6xl md:text-7xl font-bold text-white"
+                id="score-counter"
+                >00.00</span
+              >
+              <span class="text-xl text-gray-500 mb-2">/20</span>
+            </div>
+            <p class="text-xs font-mono text-accent2 mt-2">
+              EXCELLENCE IN MATH & PHYSICS
+            </p>
+          </div>
+
+          <!-- 3. ENSIA / CURRENT -->
+          <div
+            class="col-span-1 md:col-span-4 row-span-1 bento-card p-8 flex flex-col justify-center"
+          >
+            <h3 class="font-mono text-gray-400 text-xs mb-2">
+              CURRENT INSTITUTION
+            </h3>
+            <div class="text-2xl font-display font-bold">ENSIA</div>
+            <p class="text-sm text-gray-400 mt-1">
+              National School of Artificial Intelligence
+            </p>
+            <div class="mt-4 flex flex-wrap gap-2">
+              <span
+                class="px-2 py-1 bg-white/5 rounded text-[10px] font-mono border border-white/10"
+                >ALGEBRA</span
+              >
+              <span
+                class="px-2 py-1 bg-white/5 rounded text-[10px] font-mono border border-white/10"
+                >DSA</span
+              >
+              <span
+                class="px-2 py-1 bg-white/5 rounded text-[10px] font-mono border border-white/10"
+                >PROBABILITY</span
+              >
+            </div>
+          </div>
+
+          <!-- 4. GDG LEADERSHIP -->
+          <div
+            class="col-span-1 md:col-span-12 row-span-1 bento-card p-8 md:p-10 flex flex-col md:flex-row items-center gap-8"
+          >
+            <div
+              class="w-16 h-16 rounded-full border border-white/20 flex items-center justify-center shrink-0"
+            >
+              <span class="font-bold text-lg">GDG</span>
+            </div>
+            <div class="flex-grow text-center md:text-left">
+              <h3 class="font-display text-2xl font-bold">
+                HR Manager @ GDG ENSIA
+              </h3>
+              <p class="text-sm text-gray-400 mt-1 max-w-2xl">
+                Managing human capital, recruitment, and team dynamics for the
+                Google Developer Group. Applying organizational skills to foster
+                a thriving tech community.
+              </p>
+            </div>
+            <div class="shrink-0">
+              <div
+                class="px-4 py-2 bg-blue-500/20 text-blue-400 border border-blue-500/50 rounded-full font-mono text-xs"
+              >
+                LEADERSHIP
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TECH STACK (MARQUEE) -->
+      <section
+        id="stack"
+        class="py-20 border-y border-white/5 bg-black/20 backdrop-blur-sm"
+      >
+        <div class="px-4 md:px-20 mb-10">
+          <h2 class="font-mono text-xs text-gray-500 mb-2">
+            03 // THE ARSENAL
+          </h2>
+          <h3 class="font-display text-3xl">Technical Proficiency</h3>
+        </div>
+
+        <!-- Infinite Scroll -->
+        <div class="marquee-container py-4">
+          <div
+            class="marquee-content font-display text-5xl md:text-7xl font-bold text-white/10 uppercase"
+          >
+            Python &nbsp;•&nbsp; C++ &nbsp;•&nbsp; TensorFlow &nbsp;•&nbsp; Qt 6
+            &nbsp;•&nbsp; Linux &nbsp;•&nbsp; Docker &nbsp;•&nbsp; Git
+            &nbsp;•&nbsp; LaTeX &nbsp;•&nbsp; SQL &nbsp;•&nbsp; HTML/CSS
+            &nbsp;•&nbsp; Python &nbsp;•&nbsp; C++ &nbsp;•&nbsp; TensorFlow
+            &nbsp;•&nbsp; Qt 6 &nbsp;•&nbsp; Linux &nbsp;•&nbsp; Docker
+            &nbsp;•&nbsp; Git &nbsp;•&nbsp; LaTeX &nbsp;•&nbsp; SQL
+            &nbsp;•&nbsp; HTML/CSS &nbsp;•&nbsp;
+          </div>
+        </div>
+
+        <!-- Detailed Skill Grid -->
+        <div class="px-4 md:px-20 grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+          <!-- Col 1 -->
+          <div class="space-y-6">
+            <h4
+              class="font-mono text-accent text-sm border-b border-white/10 pb-2"
+            >
+              CORE LOGIC
+            </h4>
+            <ul class="space-y-3 text-sm text-gray-400">
+              <li class="flex justify-between">
+                <span class="text-white">Python</span> <span>Preferred</span>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-white">C++</span> <span>High Perf.</span>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-white">DSA</span> <span>Advanced</span>
+              </li>
+              <li class="flex justify-between">
+                <span class="text-white">OOP</span>
+                <span>Solid Principles</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Col 2 -->
+          <div class="space-y-6">
+            <h4
+              class="font-mono text-accent2 text-sm border-b border-white/10 pb-2"
+            >
+              INFRA & TOOLS
+            </h4>
+            <ul class="space-y-3 text-sm text-gray-400">
+              <li>Linux / Unix Systems</li>
+              <li>Git & GitHub Proficiency</li>
+              <li>Docker Containers</li>
+              <li>Qt 6 Framework</li>
+              <li>Oracle DB (Basic)</li>
+            </ul>
+          </div>
+
+          <!-- Col 3 -->
+          <div class="space-y-6">
+            <h4
+              class="font-mono text-white text-sm border-b border-white/10 pb-2"
+            >
+              CREATIVE & NICHE
+            </h4>
+            <ul class="space-y-3 text-sm text-gray-400">
+              <li>HTML / CSS / JS</li>
+              <li>Email Engineering</li>
+              <li>LaTeX Typesetting</li>
+              <li>Discord Bot Dev</li>
+              <li>UI/UX Design</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTACT SECTION -->
+      <section
+        id="contact"
+        class="min-h-[80vh] flex flex-col justify-between px-4 md:px-20 py-20 relative"
+      >
+        <div>
+          <h2 class="font-mono text-xs text-gray-500 mb-4">
+            04 // INITIALIZE HANDSHAKE
+          </h2>
+          <h1 class="font-display text-6xl md:text-9xl font-bold leading-none">
+            LET'S BUILD<br />
+            <span
+              class="text-transparent bg-clip-text bg-gradient-to-r from-accent to-accent2"
+              >THE FUTURE.</span
+            >
+          </h1>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mt-20">
+          <div>
+            <p class="text-gray-400 max-w-md mb-8">
+              Whether it's complex AI architecture, low-level optimization, or
+              discussing the next event. My inbox is open.
+            </p>
+            <a
+              href="mailto:ilyes.abbas@ensia.edu.dz"
+              class="text-2xl font-mono border-b border-white/30 pb-1 hover:text-accent hover:border-accent transition-colors hover-trigger"
+            >
+              ilyes.abbas@ensia.edu.dz
+            </a>
+          </div>
+
+          <div class="flex flex-col gap-4 md:items-end justify-end">
+            <div class="flex gap-6">
+              <a
+                href="https://github.com/ilyyeees"
+                target="_blank"
+                class="text-sm font-mono hover:text-accent transition-colors hover-trigger"
+                >GITHUB</a
+              >
+              <a
+                href="#"
+                class="text-sm font-mono hover:text-accent transition-colors hover-trigger"
+                >LINKEDIN</a
+              >
+              <a
+                href="#"
+                class="text-sm font-mono hover:text-accent transition-colors hover-trigger"
+                >INSTAGRAM (il.y.s)</a
+              >
+              <a
+                href="#"
+                class="text-sm font-mono hover:text-accent transition-colors hover-trigger"
+                >DISCORD (il.y.s)</a
+              >
+            </div>
+            <div class="text-xs text-gray-600 font-mono mt-4">
+              © 2025 ILYES ABBAS. ALGIERS.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- SCRIPTS -->
+    <script id="fragmentShader" type="x-shader/x-fragment">
+      uniform float u_time;
+      uniform vec2 u_resolution;
+
+      void main() {
+          vec2 st = gl_FragCoord.xy / u_resolution.xy;
+          st.x *= u_resolution.x / u_resolution.y;
+
+          vec3 color = vec3(0.0);
+
+          // Liquid Morphing Logic
+          float t = u_time * 0.2;
+
+          vec2 pos = st * 2.0;
+          float df = 0.0;
+
+          float a = 0.0;
+          vec2 vel = vec2(u_time * 0.1);
+          df += sin(dot(pos, vec2(sin(t), cos(t))) * 2.0 + u_time * 0.2);
+          df += sin(dot(pos, vec2(cos(t * 0.5), sin(t * 0.5))) * 2.0 + u_time * 0.3);
+
+          // Color Palette: Dark Background + Cyan/Purple Accents
+          vec3 c1 = vec3(0.01, 0.01, 0.02); // Deep Dark
+          vec3 c2 = vec3(0.0, 0.94, 1.0);   // Cyan
+          vec3 c3 = vec3(0.44, 0.0, 1.0);   // Purple
+
+          float n = sin(df * 2.0 + u_time) * 0.5 + 0.5;
+
+          color = mix(c1, c2, n * 0.15);
+          color = mix(color, c3, sin(st.x * 5.0 + t) * 0.15);
+
+          gl_FragColor = vec4(color, 1.0);
+      }
+    </script>
+
+    <script id="vertexShader" type="x-shader/x-vertex">
+      void main() {
+          gl_Position = vec4(position, 1.0);
+      }
+    </script>
+
+    <script>
+      // 1. LENIS SMOOTH SCROLL
+      const lenis = new Lenis({
+        duration: 1.5,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      });
+      function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+      requestAnimationFrame(raf);
+
+      // 2. THREE.JS BACKGROUND SHADER
+      const canvasContainer = document.getElementById('canvas-container');
+      const scene = new THREE.Scene();
+      const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      const renderer = new THREE.WebGLRenderer({ alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      canvasContainer.appendChild(renderer.domElement);
+
+      const geometry = new THREE.PlaneGeometry(2, 2);
+      const uniforms = {
+        u_time: { value: 0 },
+        u_resolution: {
+          value: new THREE.Vector2(window.innerWidth, window.innerHeight),
+        },
+      };
+
+      const material = new THREE.ShaderMaterial({
+        uniforms: uniforms,
+        vertexShader: document.getElementById('vertexShader').textContent,
+        fragmentShader: document.getElementById('fragmentShader').textContent,
+      });
+
+      const mesh = new THREE.Mesh(geometry, material);
+      scene.add(mesh);
+
+      function animateShader() {
+        uniforms.u_time.value += 0.01;
+        renderer.render(scene, camera);
+        requestAnimationFrame(animateShader);
+      }
+      animateShader();
+
+      window.addEventListener('resize', () => {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        uniforms.u_resolution.value.x = window.innerWidth;
+        uniforms.u_resolution.value.y = window.innerHeight;
+      });
+
+      // 3. CUSTOM CURSOR
+      const cursor = document.getElementById('cursor');
+      const hoverTriggers = document.querySelectorAll('.hover-trigger');
+
+      document.addEventListener('mousemove', (e) => {
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+      });
+
+      hoverTriggers.forEach((trigger) => {
+        trigger.addEventListener('mouseenter', () =>
+          cursor.classList.add('hovered')
+        );
+        trigger.addEventListener('mouseleave', () =>
+          cursor.classList.remove('hovered')
+        );
+      });
+
+      // 4. GSAP ANIMATIONS
+      gsap.registerPlugin(ScrollTrigger);
+
+      // Entrance
+      gsap.to('.animate-in', {
+        opacity: 1,
+        y: 0,
+        duration: 1.5,
+        stagger: 0.2,
+        ease: 'power4.out',
+        delay: 0.5,
+      });
+
+      // Score Counter Animation
+      let score = { value: 0 };
+      gsap.to(score, {
+        value: 17.96,
+        duration: 3,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: '#score-counter',
+          start: 'top 85%',
+        },
+        onUpdate: () => {
+          document.getElementById('score-counter').innerText =
+            score.value.toFixed(2);
+        },
+      });
+
+      // Cards Parallax
+      gsap.utils.toArray('.bento-card').forEach((card) => {
+        gsap.from(card, {
+          y: 50,
+          opacity: 0,
+          duration: 1,
+          scrollTrigger: {
+            trigger: card,
+            start: 'top 90%',
+          },
+        });
+      });
+    </script>
+  </body>
+</html>
